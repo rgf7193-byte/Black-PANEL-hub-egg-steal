@@ -1,0 +1,506 @@
+-- ==========================================================
+-- PARTE 1 - JANELA VISUAL, TÍTULO CUSTOMIZADO E CONFIGURAÇÕES
+-- ==========================================================
+
+local Players = game:GetService("Players")
+local CoreGui = game:GetService("CoreGui")
+
+local LocalPlayer = Players.LocalPlayer
+local AreaFolder = workspace:WaitForChild("AreaEggSlotsClient")
+
+_G.PastaSecreta = _G.PastaSecreta or Instance.new("Folder")
+_G.PastaSecreta.Name = "DeltaSecretFolder"
+_G.PastaSecreta.Parent = game:GetService("CorePackages")
+
+local C1 = Vector3.new(7000.6, 70.6, -427.5)
+local C2 = Vector3.new(7000.7, 70.6, -295.7)
+local C3 = Vector3.new(2783.1, 70.6, -433.3)
+local C4 = Vector3.new(2783.3, 70.6, -295.1)
+
+_G.MIN_X = math.min(C1.X, C2.X, C3.X, C4.X)
+_G.MAX_X = math.max(C1.X, C2.X, C3.X, C4.X)
+_G.MIN_Z = math.min(C1.Z, C2.Z, C3.Z, C4.Z)
+_G.MAX_Z = math.max(C1.Z, C2.Z, C3.Z, C4.Z)
+
+_G.SPEED, _G.Marcado, _G.MarcadoTipo, _G.MarcadoBox, _G.Moving, _G.MoveConnection, _G.RemoverCooldownEAtivar = 500, nil, nil, nil, false, nil, true
+
+local OldGui = CoreGui:FindFirstChild("DeltaCustomMenu")
+if OldGui then OldGui:Destroy() end
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "DeltaCustomMenu"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = CoreGui
+_G.DeltaScreenGui = ScreenGui
+
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 350, 0, 330)
+MainFrame.Position = UDim2.new(0.5, -175, 0.5, -165)
+MainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.Parent = ScreenGui
+_G.MainFrame = MainFrame
+
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 10)
+MainCorner.Parent = MainFrame
+
+local TitleContainer = Instance.new("Frame")
+TitleContainer.Size = UDim2.new(1, 0, 0, 45)
+TitleContainer.BackgroundTransparency = 1
+TitleContainer.Parent = MainFrame
+
+local TextBlack = Instance.new("TextLabel")
+TextBlack.Size = UDim2.new(0.5, 0, 1, 0)
+TextBlack.Position = UDim2.new(0, 0, 0, 0)
+TextBlack.BackgroundTransparency = 1
+TextBlack.Text = "BLACK "
+TextBlack.TextColor3 = Color3.fromRGB(130, 50, 250)
+TextBlack.TextSize = 20
+TextBlack.Font = Enum.Font.GothamBold
+TextBlack.TextXAlignment = Enum.TextXAlignment.Right
+TextBlack.Parent = TitleContainer
+
+local TextPanel = Instance.new("TextLabel")
+TextPanel.Size = UDim2.new(0.5, 0, 1, 0)
+TextPanel.Position = UDim2.new(0.5, 0, 0, 0)
+TextPanel.BackgroundTransparency = 1
+TextPanel.Text = "PANEL"
+TextPanel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TextPanel.TextSize = 20
+TextPanel.Font = Enum.Font.GothamBold
+TextPanel.TextXAlignment = Enum.TextXAlignment.Left
+TextPanel.Parent = TitleContainer
+
+local Scroll = Instance.new("ScrollingFrame")
+Scroll.Name = "EggScroll" Scroll.Size = UDim2.new(1, -30, 0, 195) Scroll.Position = UDim2.new(0, 15, 0, 50) Scroll.BackgroundColor3 = Color3.fromRGB(12, 12, 12) Scroll.BorderSizePixel = 0 Scroll.ScrollBarThickness = 5 Scroll.ScrollBarImageColor3 = Color3.fromRGB(150, 0, 255) Scroll.CanvasSize = UDim2.new(0, 0, 0, 0) Scroll.Parent = MainFrame _G.EggScroll = Scroll
+local ScrollCorner = Instance.new("UICorner") ScrollCorner.CornerRadius = UDim.new(0, 8) ScrollCorner.Parent = Scroll
+local Layout = Instance.new("UIListLayout") Layout.Padding = UDim.new(0, 6) Layout.SortOrder = Enum.SortOrder.LayoutOrder Layout.Parent = Scroll _G.ScrollLayout = Layout
+local Padding = Instance.new("UIPadding") Padding.PaddingTop = UDim.new(0, 6) Padding.PaddingBottom = UDim.new(0, 6) Padding.PaddingLeft = UDim.new(0, 6) Padding.PaddingRight = UDim.new(0, 6) Padding.Parent = Scroll
+local PurpleLine = Instance.new("Frame") PurpleLine.Size = UDim2.new(1, -30, 0, 2) PurpleLine.Position = UDim2.new(0, 15, 0, 255) PurpleLine.BackgroundColor3 = Color3.fromRGB(150, 0, 255) PurpleLine.BorderSizePixel = 0 PurpleLine.Parent = MainFrame
+
+local GoButton = Instance.new("TextButton") GoButton.Name = "GoButton" GoButton.Size = UDim2.new(0, 70, 0, 35) GoButton.Position = UDim2.new(0, 20, 0, 275) GoButton.BackgroundColor3 = Color3.fromRGB(125, 0, 220) GoButton.BorderSizePixel = 0 GoButton.Text = "Go" GoButton.TextColor3 = Color3.fromRGB(255, 255, 255) GoButton.TextSize = 16 GoButton.Font = Enum.Font.GothamBold GoButton.Parent = MainFrame _G.GoButton = GoButton
+local GoCorner = Instance.new("UICorner") GoCorner.CornerRadius = UDim.new(0, 8) GoCorner.Parent = GoButton
+-- ==========================================================
+-- PARTE 2 - FUNÇÕES DE ÁREA, LEITURA E AUTO-DELETE DE COMUNS
+-- ==========================================================
+
+local AreaFolder = workspace:WaitForChild("AreaEggSlotsClient")
+
+_G.getEggPosition = function(egg)
+    if not egg or not egg.Parent then return nil end
+    if egg:IsA("Model") then return egg:GetPivot().Position end
+    if egg:IsA("BasePart") then return egg.Position end
+    local part = egg:FindFirstChildWhichIsA("BasePart", true)
+    if part then return part.Position end
+    return nil
+end
+
+_G.temParticula = function(egg)
+    if not egg then return false end
+    return egg:FindFirstChildWhichIsA("ParticleEmitter", true) ~= nil 
+        or egg:FindFirstChildWhichIsA("Sparkles", true) ~= nil 
+        or egg:FindFirstChildWhichIsA("Smoke", true) ~= nil
+        or egg:FindFirstChildWhichIsA("Fire", true) ~= nil
+end
+
+_G.estaNaArea = function(egg)
+    local pos = _G.getEggPosition(egg)
+    if not pos then return false end
+    return pos.X >= _G.MIN_X and pos.X <= _G.MAX_X and pos.Z >= _G.MIN_Z and pos.Z <= _G.MAX_Z
+end
+
+local function limparAreaDeEggsComuns()
+    for _, egg in ipairs(AreaFolder:GetChildren()) do
+        if _G.estaNaArea(egg) and not _G.temParticula(egg) then
+            egg:Destroy()
+        end
+    end
+end
+
+limparAreaDeEggsComuns()
+AreaFolder.ChildAdded:Connect(function()
+    task.wait(0.05)
+    limparAreaDeEggsComuns()
+end)
+
+_G.getEggType = function(egg)
+    local attributes = {"EggName", "EggType", "DisplayName", "ModelName"}
+    for _, name in ipairs(attributes) do
+        local value = egg:GetAttribute(name)
+        if value ~= nil and tostring(value) ~= "" then return tostring(value) end
+    end
+    local values = {"EggName", "EggType", "DisplayName", "ModelName"}
+    for _, name in ipairs(values) do
+        local obj = egg:FindFirstChild(name, true)
+        if obj and obj:IsA("StringValue") and obj.Value ~= "" then return obj.Value end
+    end
+    return egg.Name:gsub("_%d+$", ""):gsub("%s*%(%d+%)$", ""):gsub("%s+%d+$", "")
+end
+
+_G.getEggRarity = function(egg)
+    local names = {"Rarity", "Raridade", "EggRarity", "RarityName"}
+    for _, name in ipairs(names) do
+        local value = egg:GetAttribute(name)
+        if value ~= nil and tostring(value) ~= "" then return tostring(value) end
+    end
+    for _, name in ipairs(names) do
+        local obj = egg:FindFirstChild(name, true)
+        if obj and obj:IsA("StringValue") and obj.Value ~= "" then return obj.Value end
+    end
+    return "Desconhecida"
+end
+-- ==========================================================
+-- PARTE 3 - NOVO RENDERIZADOR VIEWPORT E INJEÇÃO DO PROMPT
+-- ==========================================================
+
+_G.mostrarModelo = function(viewport, egg)
+    viewport:ClearAllChildren() if not egg then return end
+    
+    local antigoArchivable = egg.Archivable 
+    egg.Archivable = true 
+    
+    local clone = nil
+    pcall(function() clone = egg:Clone() end) 
+    egg.Archivable = antigoArchivable 
+    
+    if not clone then return end 
+    clone.Parent = viewport
+    
+    local Camera = Instance.new("Camera") 
+    Camera.Parent = viewport 
+    viewport.CurrentCamera = Camera
+    
+    if clone:IsA("Model") then 
+        local part = clone.PrimaryPart or clone:FindFirstChildWhichIsA("BasePart", true) 
+        if part then Camera.CFrame = CFrame.new(part.Position + Vector3.new(0, 0, 4), part.Position) end
+    elseif clone:IsA("BasePart") then 
+        Camera.CFrame = CFrame.new(clone.Position + Vector3.new(0, 0, 4), clone.Position) 
+    end
+end
+
+local function processarPromptUnico(prompt)
+    if not prompt:IsA("ProximityPrompt") then return end
+    prompt.HoldDuration = 0 
+    prompt.RequiresLineOfSight = false
+    if prompt.Enabled then 
+        task.spawn(function() 
+            if fireproximityprompt then 
+                fireproximityprompt(prompt) 
+            else 
+                prompt:InputHoldBegin() 
+                task.wait() 
+                prompt:InputHoldEnd() 
+            end 
+        end) 
+    end
+end
+
+_G.varrerPromptsApenasPertoDeMim = function(hrp, raioCustomizado)
+    if not hrp then return end
+    local raio = raioCustomizado or 7
+    for _, prompt in ipairs(workspace:GetDescendants()) do 
+        if prompt:IsA("ProximityPrompt") and prompt.ClassName == "ProximityPrompt" then 
+            local partPai = prompt.Parent:IsA("BasePart") and prompt.Parent or prompt.Parent:FindFirstChildWhichIsA("BasePart", true)
+            if partPai then
+                local distancia = (partPai.Position - hrp.Position).Magnitude
+                if distancia <= raio then
+                    processarPromptUnico(prompt)
+                end
+            end
+        end 
+    end 
+end
+-- ==========================================================
+-- PARTE 4 - CORRIDA, TRAVA, CICLO DE COLETA E CARD LOOPS
+-- ==========================================================
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+local AreaFolder = workspace:WaitForChild("AreaEggSlotsClient")
+local Scroll = _G.EggScroll
+
+_G.pararMovimento = function()
+    _G.Moving = false
+    if _G.MoveConnection then
+        _G.MoveConnection:Disconnect()
+        _G.MoveConnection = nil
+    end
+    if _G.loopCorrida then
+        _G.loopCorrida:Disconnect()
+        _G.loopCorrida = nil
+    end
+    if _G.loopColetaSegundoTP then
+        _G.loopColetaSegundoTP:Disconnect()
+        _G.loopColetaSegundoTP = nil
+    end
+    
+    local char = LocalPlayer.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    
+    if hrp then
+        hrp.Anchored = false
+        local lv = hrp:FindFirstChild("DeltaVelocity")
+        local attachment = hrp:FindFirstChild("DeltaAttachment")
+        if lv then lv:Destroy() end
+        if attachment then attachment:Destroy() end
+    end
+    if hum then 
+        hum.PlatformStand = false 
+        workspace.CurrentCamera.CameraSubject = hum
+    end
+end
+
+_G.executarCicloDoEgg = function(char, hrp, eggCoord)
+    local travaEgg = RunService.Heartbeat:Connect(function()
+        if hrp and hrp.Parent then
+            hrp.CFrame = CFrame.new(eggCoord)
+            hrp.AssemblyLinearVelocity = Vector3.zero
+            hrp.AssemblyAngularVelocity = Vector3.zero
+        end
+    end)
+
+    -- 1. FICA PARADO POR EXATAMENTE 1 SEGUNDO NA COORDENADA DO EGG DO PAINEL
+    task.wait(1.0)
+    
+    -- 2. ATIVA O COLETOR PERTO DE VOCÊ (DISTÂNCIA CURTA PRO OVO DO PAINEL)
+    _G.varrerPromptsApenasPertoDeMim(hrp, 7)
+    
+    -- 3. CONTAGEM DE 0.5 SEGUNDOS PEDIDA
+    task.wait(0.5)
+    
+    if travaEgg then travaEgg:Disconnect() end
+
+    -- ======================================================
+    -- SEU SISTEMA DE TPs COM REPETIÇÃO CONTÍNUA DO LAÇO DE COLETAS
+    -- ======================================================
+    local c1 = Vector3.new(604.9, 70.6, -295.1)
+    local c2 = Vector3.new(549.6, 70.6, -296.9)
+
+    -- ATALHOS BÁSICOS
+    local p = game.Players.LocalPlayer
+    char = p.Character
+    local root = char.HumanoidRootPart
+    local hum = char.Humanoid
+
+    ---------------------------------------------------------
+    -- CICLO 1: INICIA DIRETO AO EXECUTAR
+    ---------------------------------------------------------
+    root.CFrame = CFrame.new(c1)
+
+    hum.BreakJointsOnDeath = false
+    local fake1 = Instance.new("Humanoid")
+    fake1.Name = "FakeHumanoid"
+    hum.Parent = nil
+    fake1.Parent = char
+
+    -- Heartbeat bruto para gravar no chão
+    local hb1
+    hb1 = game:GetService("RunService").Heartbeat:Connect(function()
+        root.CFrame = CFrame.new(c1)
+        root.Velocity = Vector3.new(0,0,0)
+    end)
+
+    -- Aguarda 0.65 segundos para o drop
+    task.wait(0.65)
+    hum.Health = 0
+    char:BreakJoints() -- VOCÊ MORREU AQUI
+
+    ---------------------------------------------------------
+    -- PARADA TOTAL: APÓS A MORTE NÃO FAZ MAIS NADA POR 2.7 SEGUNDOS
+    ---------------------------------------------------------
+    hb1:Disconnect()
+    fake1:Destroy()  
+    hum.Parent = char
+
+    task.wait(2.7)
+
+    ---------------------------------------------------------
+    -- O SEGUNDO TP: TRAVA IMORTAL COM MARTELADA REPETIDA DE CLIQUES
+    ---------------------------------------------------------
+    char = p.Character or p.CharacterAdded:Wait()
+    root = char:WaitForChild("HumanoidRootPart")
+    hum = char:WaitForChild("Humanoid")
+
+    -- Vira humanoide fake imortal para o ciclo 2
+    hum.BreakJointsOnDeath = false
+    local fake2 = Instance.new("Humanoid")
+    fake2.Name = "FakeHumanoid"
+    hum.Parent = nil
+    fake2.Parent = char
+
+    -- Liga o Heartbeat bruto para travar no chão na coordenada de novo
+    local hb2
+    hb2 = game:GetService("RunService").Heartbeat:Connect(function()
+        root.CFrame = CFrame.new(c1)
+        root.Velocity = Vector3.new(0,0,0)
+    end)
+
+    -- Dá o segundo TP na coordenada C1
+    root.CFrame = CFrame.new(c1)
+    task.wait(0.05)
+
+    -- Limpa instâncias antigas de loops repetidos para não dar conflito na segunda vez
+    if _G.loopColetaSegundoTP then
+        _G.loopColetaSegundoTP:Disconnect()
+        _G.loopColetaSegundoTP = nil
+    end
+
+    -- MUDANÇA PRINCIPAL: Loop contínuo frame a frame forçando a coleta durante todo o tempo travado
+    _G.loopColetaSegundoTP = game:GetService("RunService").Heartbeat:Connect(function()
+        for _, prompt in pairs(workspace:GetDescendants()) do
+            if prompt:IsA("ProximityPrompt") then
+                local nomePrompt = prompt.Name:lower()
+                local nomePai = prompt.Parent and prompt.Parent.Name:lower() or ""
+                
+                -- Se o prompt pertencer a uma loja, roleta ou menu de evento, ignora
+                if not (string.find(nomePrompt, "shop") or string.find(nomePai, "shop") or
+                        string.find(nomePrompt, "store") or string.find(nomePai, "store") or
+                        string.find(nomePrompt, "loja") or string.find(nomePai, "loja") or
+                        string.find(nomePrompt, "buy") or string.find(nomePai, "buy") or
+                        string.find(nomePrompt, "sell") or string.find(nomePai, "sell") or
+                        string.find(nomePrompt, "event") or string.find(nomePai, "event")) then
+                    
+                    prompt.HoldDuration = 0
+                    task.spawn(function()
+                        if fireproximityprompt then 
+                            fireproximityprompt(prompt) 
+                        else 
+                            prompt:InputHoldBegin() 
+                            task.wait() 
+                            prompt:InputHoldEnd() 
+                        end 
+                    end)
+                end
+            end
+        end
+    end)
+
+    -- Fica martelando a coleta e travado no chão por exatamente 0.50 segundos seguros
+    task.wait(0.45)
+
+    -- Acabou o tempo de 0.50s total: desliga os laços de coleta, trava e volta ao normal
+    if _G.loopColetaSegundoTP then
+        _G.loopColetaSegundoTP:Disconnect()
+        _G.loopColetaSegundoTP = nil
+    end
+    hb2:Disconnect()
+    fake2:Destroy()
+    hum.Parent = char
+
+    -- TP DE 20 STUDS PARA CIMA E CORRIDA SPEED 100 ATÉ A COORDENADA FINAL C2
+    root.CFrame = root.CFrame + Vector3.new(0, 20, 0)
+    task.wait()
+
+    local hbCorrida
+    hbCorrida = game:GetService("RunService").Heartbeat:Connect(function(dt)
+        local pos = root.Position
+        local dist = (c2 - pos).Magnitude
+        
+        if dist < 2 then
+            root.CFrame = CFrame.new(c2)
+            hbCorrida:Disconnect()
+        else
+            local dir = (c2 - pos).Unit
+            root.CFrame = CFrame.lookAt(pos + (dir * 100 * dt), pos + dir)
+        end
+    end)
+end
+
+_G.irParaEgg = function()
+    if _G.Moving then _G.pararMovimento() return end
+    if not _G.Marcado then return end
+
+    local char = LocalPlayer.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    if not hrp or not hum then return end
+
+    _G.Moving = true
+    hum.PlatformStand = true 
+
+    local attachment = hrp:FindFirstChild("DeltaAttachment") or Instance.new("Attachment")
+    attachment.Name = "DeltaAttachment"
+    attachment.Parent = hrp
+
+    local lv = hrp:FindFirstChild("DeltaVelocity") or Instance.new("LinearVelocity")
+    lv.Name = "DeltaVelocity"
+    lv.MaxForce = 999999
+    lv.VelocityConstraintMode = Enum.VelocityConstraintMode.Vector
+    lv.Attachment0 = attachment
+    lv.Parent = hrp
+
+    _G.MoveConnection = RunService.Heartbeat:Connect(function()
+        if not _G.Moving or not _G.Marcado or not _G.Marcado.Parent or not hrp.Parent then _G.pararMovimento() return end
+        local target = _G.getEggPosition(_G.Marcado)
+        if not target then _G.pararMovimento() return end
+
+        local direcao = target - hrp.Position
+        local distancia = direcao.Magnitude
+
+        if distancia <= 4.5 then
+            _G.MoveConnection:Disconnect()
+            _G.MoveConnection = nil
+            _G.Moving = false
+            
+            lv:Destroy()
+            attachment:Destroy()
+            hum.PlatformStand = false
+
+            task.spawn(function()
+                _G.executarCicloDoEgg(char, hrp, target)
+            end)
+            return
+        end
+
+        lv.VectorVelocity = direcao.Unit * 270
+    end)
+end 
+-- ==========================================================
+-- PARTE 5 - CONEXÕES VISUAIS DA LISTA, LOOP E INICIALIZADORES
+-- ==========================================================
+
+_G.criarCaixinhaEgg = function(egg, tipo)
+    local pos = _G.getEggPosition(egg) if not pos then return end local rarity = _G.getEggRarity(egg)
+    local Box = Instance.new("TextButton") Box.Name = "EggBox" Box.Size = UDim2.new(1, -12, 0, 85) Box.BackgroundColor3 = Color3.fromRGB(25, 25, 25) Box.BorderSizePixel = 0 Box.Text = "" Box.Parent = Scroll
+    local Corner = Instance.new("UICorner") Corner.CornerRadius = UDim.new(0, 8) Corner.Parent = Box
+    local Viewport = Instance.new("ViewportFrame") Viewport.Size = UDim2.new(0, 75, 0, 75) Viewport.Position = UDim2.new(0, 5, 0, 5) Viewport.BackgroundTransparency = 1 Viewport.Ambient = Color3.fromRGB(200, 200, 200) Viewport.Parent = Box
+    _G.mostrarModelo(Viewport, egg)
+    local RarityLabel = Instance.new("TextLabel") RarityLabel.Size = UDim2.new(0, 145, 0, 22) RarityLabel.Position = UDim2.new(0, 85, 0, 5) RarityLabel.BackgroundTransparency = 1 RarityLabel.Text = "Raridade: " .. rarity RarityLabel.TextColor3 = Color3.fromRGB(255, 255, 255) RarityLabel.Font = Enum.Font.GothamBold RarityLabel.TextXAlignment = Enum.TextXAlignment.Left RarityLabel.Parent = Box
+    local CoordLabel = Instance.new("TextLabel") CoordLabel.Size = UDim2.new(0, 150, 0, 48) CoordLabel.Position = UDim2.new(0, 85, 0, 30) CoordLabel.BackgroundTransparency = 1 CoordLabel.Text = string.format("X: %.1f\nY: %.1f\nZ: %.1f", pos.X, pos.Y, pos.Z) CoordLabel.TextColor3 = Color3.fromRGB(190, 190, 190) CoordLabel.Font = Enum.Font.Gotham CoordLabel.TextXAlignment = Enum.TextXAlignment.Left CoordLabel.TextYAlignment = Enum.TextYAlignment.Top CoordLabel.Parent = Box
+    Box.MouseButton1Click:Connect(function()
+        if _G.Marcado == egg then _G.Marcado, _G.MarcadoTipo, Box.BackgroundColor3, _G.MarcadoBox = nil, nil, Color3.fromRGB(25, 25, 25), nil return end
+        if _G.MarcadoBox and _G.MarcadoBox.Parent then _G.MarcadoBox.BackgroundColor3 = Color3.fromRGB(25, 25, 25) end _G.Marcado, _G.MarcadoTipo, _G.MarcadoBox, Box.BackgroundColor3 = egg, tipo, Box, Color3.fromRGB(125, 0, 220)
+    end)
+end
+
+local function atualizarCanvas() task.wait() _G.EggScroll.CanvasSize = UDim2.new(0, 0, 0, _G.ScrollLayout.AbsoluteContentSize.Y + 12) end
+local function criarAssinatura()
+    local encontrados = {} for _, egg in ipairs(AreaFolder:GetChildren()) do if _G.estaNaArea(egg) and _G.temParticula(egg) then local tipo = _G.getEggType(egg) local pos = _G.getEggPosition(egg) if tipo and pos then table.insert(encontrados, string.format("%s|%.1f|%.1f|%.1f", tipo, pos.X, pos.Y, pos.Z)) end end end table.sort(encontrados) return table.concat(encontrados, ";;")
+end
+
+local UltimaAssinatura = ""
+_G.atualizarLista = function(forcar)
+    local assinatura = criarAssinatura() if not forcar and assinatura == UltimaAssinatura then return end UltimaAssinatura = assinatura
+    for _, child in ipairs(_G.EggScroll:GetChildren()) do if child:IsA("TextButton") then child:Destroy() end end
+    local tiposAdicionados, eggs = {}, {}
+    for _, egg in ipairs(AreaFolder:GetChildren()) do if _G.estaNaArea(egg) and _G.temParticula(egg) then local tipo = _G.getEggType(egg) if tipo and tipo ~= "" and not tiposAdicionados[tipo] then tiposAdicionados[tipo] = true table.insert(eggs, {Instance = egg, Tipo = tipo}) end end end
+    table.sort(eggs, function(a, b) return a.Tipo:lower() < b.Tipo:lower() end)
+    for _, data in ipairs(eggs) do if data.Instance and data.Instance.Parent and _G.estaNaArea(data.Instance) and _G.temParticula(data.Instance) then _G.criarCaixinhaEgg(data.Instance, data.Tipo) end end
+    atualizarCanvas()
+end
+
+_G.GoButton.MouseButton1Click:Connect(function()
+    if not _G.Marcado then return end if not _G.Marcado.Parent then _G.Marcado, _G.MarcadoBox = nil, nil return end
+    if _G.Moving then _G.pararMovimento() _G.GoButton.BackgroundColor3 = Color3.fromRGB(125, 0, 220) else _G.GoButton.BackgroundColor3 = Color3.fromRGB(180, 50, 255) _G.irParaEgg() end
+end)
+
+AreaFolder.ChildRemoved:Connect(function(child) if child == _G.Marcado then _G.pararMovimento() end task.delay(0.15, function() _G.atualizarLista(true) end) end)
+task.spawn(function() while _G.DeltaScreenGui.Parent do task.wait(0.5) _G.atualizarLista(false) end end)
+LocalPlayer.CharacterAdded:Connect(function() _G.pararMovimento() task.wait(1) _G.atualizarLista(true) end)
+_G.atualizarLista(true)
